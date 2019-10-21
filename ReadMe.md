@@ -22,37 +22,37 @@ tail -n <n> access.log > short.log
 ## result.txt
 This file contains a list of analized IP addresses grouped by the origin of the traffic. For the traffic the is determined as bad-bots-like the reason of  the desition is metioned:
 
-	1. ADMIN_BAD_OROGIN: the user tried to conect to the administrator page from an IP that is not located in Europe (as the web-site is located in Austria)
+1. ADMIN_BAD_OROGIN: the user tried to conect to the administrator page from an IP that is not located in Europe (as the web-site is located in Austria)
 
-	2. ROBOT_TXT: the user made a request to get file robots.txt but the http-header either doesn't mention that the request is made by a bot or the bot name is not trusted
+2. ROBOT_TXT: the user made a request to get file robots.txt but the http-header either doesn't mention that the request is made by a bot or the bot name is not trusted
 
-	3. BAD_REFERER: referrer of the request is in the black-list
+3. BAD_REFERER: referrer of the request is in the black-list
 
-	4. MAX_REQUESTS: the user made to many requests in one session
+4. MAX_REQUESTS: the user made to many requests in one session
 
-	5. MAX_ERR: the user's requests leaded to too many not-success responses
+5. MAX_ERR: the user's requests leaded to too many not-success responses
 
-	6. MIN_DELTA: average gap between the user's request is to small
+6. MIN_DELTA: average gap between the user's request is to small
 
-	7. UNTRUSTED_ORIGIN: the user's requests are made from the IP group, sum of requests from which is suspiciously large
+7. UNTRUSTED_ORIGIN: the user's requests are made from the IP group, sum of requests from which is suspiciously large
 
-	8. HOST_NOT_MATCH: http-header of the request contains a name of a trusted bot but the IP address doesn't match with the list of trusted bot hosts
+8. HOST_NOT_MATCH: http-header of the request contains a name of a trusted bot but the IP address doesn't match with the list of trusted bot hosts
 
 ## Algorithm explaination:
 
-	1. Reading a log file into a data frame from a copy of http://www.almhuette-raith.at/apache-log/access.log
+1. Reading a log file into a data frame from a copy of http://www.almhuette-raith.at/apache-log/access.log
 
-	2. Converting date strings to DateTime type
+2. Converting date strings to DateTime type
 
-	3. Dividing requests depending on if they have good bot name in agent field (doesn't definitely mean it's a good bot) or not
+3. Dividing requests depending on if they have good bot name in agent field (doesn't definitely mean it's a good bot) or not
 
-	4. Checking the list of good bots depending on if the request is made from an IP hosted by a trusted host or not
+4. Checking the list of good bots depending on if the request is made from an IP hosted by a trusted host or not
 
-	5. Filter the traffic which is not created by good bots depending on the following rules:
+5. Filter the traffic which is not created by good bots depending on the following rules:
 
-			- the general amount of requests (ignoring requests made by a page to get its sources)
-			- time deltas between moving to another page
-			- percentage of not-success responses
-			- the volume of traffic coming from an unexpected location
+	- the general amount of requests (ignoring requests made by a page to get its sources)
+	- time deltas between moving to another page
+	- percentage of not-success responses
+	- the volume of traffic coming from an unexpected location
 
-	6. Grouping all traffic by IP addresses and building the map
+6. Grouping all traffic by IP addresses and building the map
