@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/21 21:44:19 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/21 22:28:59 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -26,7 +26,7 @@ from mpl_toolkits.basemap import Basemap
 # TODO
 # Remove double IPs if header changes
 
-MAX_ERR = 5 # maximum amount of requests per session with a non-success response
+MAX_ERR = 10 #maximum amount of requests per session with a non-success response
 MAX_REQUESTS = 10 # maximum amount of requests per session with success response
 MIN_DELTA = 3.0 # minimum average time spent on each page
 SESSION_LENGTH = 1800 # length of a session in seconds
@@ -34,7 +34,7 @@ MAX_SAME_ORIGIN = 3 # maximum of IPs of the same subnet
 SHORT_STAY_RATIO = 0.5 # maximum ratio if short stays on pages
 SHORT_STAY = 1 # short stay on pages in seconds
 MAX_SHORT_SESSIONS = 3.0 # maximum amout of short sessions
-SHORT_SESSION = 1.0
+SHORT_SESSION = 1.0 # amount of pages visited considered to be a short session
 
 SERVER_NAME = 'almhuette-raith.at'
 FILE_ERR = 'favicon.ico'
