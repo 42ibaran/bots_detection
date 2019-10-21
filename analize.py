@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/21 22:28:59 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/22 00:38:23 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,13 +21,9 @@ import socket
 import itertools
 import statistics as st
 import matplotlib.patches as mpatches
+import os
 from mpl_toolkits.basemap import Basemap
 
-# TODO
-# Remove double IPs if header changes
-
-MAX_ERR = 10 #maximum amount of requests per session with a non-success response
-MAX_REQUESTS = 10 # maximum amount of requests per session with success response
 MIN_DELTA = 3.0 # minimum average time spent on each page
 SESSION_LENGTH = 1800 # length of a session in seconds
 MAX_SAME_ORIGIN = 3 # maximum of IPs of the same subnet
@@ -39,6 +35,7 @@ SHORT_SESSION = 1.0 # amount of pages visited considered to be a short session
 SERVER_NAME = 'almhuette-raith.at'
 FILE_ERR = 'favicon.ico'
 
+LOG_FILENAME = "short.log"
 DATE_FORMAT = '%d/%b/%Y:%H:%M:%S %z'
 
 # add botname that you trust to avoid blocking them (in lower case)
@@ -136,8 +133,9 @@ def build_map(bad_bots, good_bots, human_req):
 	m.drawcoastlines(linewidth=0.1, color="white")
 	m.drawcountries(color='white')
 
-	plt.scatter(data.longitude, data.latitude, c=data.color,
-				s=25, alpha=0.8)
+	for i, row in data.iterrows():
+		plt.scatter(row.longitude, row.latitude, c=row.color,
+				s=row['size'] * 2, alpha=0.8)
 					
 	green_patch = mpatches.Patch(color='green', label='Humans')
 	orange_patch = mpatches.Patch(color='orange', label='Good bots')
@@ -151,9 +149,14 @@ def build_map(bad_bots, good_bots, human_req):
 # if there is a good bot name or not
 def filter_by_header(data):
 	print("Filtering data by header")
-	good = data[data['agent'].str.contains('(?i)' + '|'.join(good_bots_names))]
-	bad = data[~data['agent'].str.contains('(?i)' + '|'.join(good_bots_names))]
-	return [good, bad]
+	grouped = data.groupby('ip')
+	good = not_good = data_form
+	for ip, group in grouped:
+		if group['agent'].str.contains('(?i)' + '|'.join(good_bots_names)).any():
+			good = good.append(group)
+		else:
+			not_good = not_good.append(group)
+	return [good, not_good]
 
 # Filter good bots depending on if the IP address originates
 # from a trusted host using reverse DNS lookup
@@ -202,10 +205,6 @@ def analyze_sessions(sessions, ip, status, details):
 	if average <= SHORT_SESSION and len(sessions) >= MAX_SHORT_SESSIONS:
 		return 'SHORT_SESSIONS'
 	for session in sessions:
-		if status == '200':
-			if len(session) > MAX_REQUESTS: return 'MAX_REQUESTS'
-		else:
-			if len(session) > MAX_ERR: return 'MAX_ERR'
 		newlist = [gap for gap in session if gap <= SHORT_STAY]
 		if len(session) != 0 and len(newlist) / len(session) > SHORT_STAY_RATIO:
 			return 'MIN_DELTA'
@@ -261,7 +260,7 @@ def filter_by_origin(not_good_bots):
 		splt = row['ip'].split('.')[0:3]
 		origin = '.'.join(splt)
 		to_find_in = not_good_bots[not_good_bots.ip != row['ip']]
-		if to_find_in['ip'].str.contains( origin ).any():
+		if to_find_in['ip'].str.contains(origin).any():
 			same_origins = same_origins.append(row)
 	for i, same_origin in same_origins.iterrows():
 		splt = same_origin['ip'].split('.')[0:3]
@@ -294,7 +293,13 @@ def output_to_file(data, bad_bots, good_bots, humans):
 
 if __name__ == '__main__':
 	data = data_form
-	data = data.append(pd.DataFrame(log_reader("short.log", "access")),
+
+	if os.environ['LOG_FILENAME'] != '':
+		filename = os.environ['LOG_FILENAME']
+	else:
+		filename = LOG_FILENAME
+
+	data = data.append(pd.DataFrame(log_reader(filename, "access")),
 						sort=False)
 	data['date'] = pd.to_datetime(data['date'], format=DATE_FORMAT)
 
@@ -319,4 +324,4 @@ if __name__ == '__main__':
 	humans = humans.groupby(['ip'])
 
 	output_to_file(data, bad_bots, good_bots, humans)
-	# build_map(bad_bots, good_bots, humans)
+	build_map(bad_bots, good_bots, humans)
