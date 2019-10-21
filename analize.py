@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/21 19:14:56 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/21 21:44:19 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,34 +23,21 @@ import statistics as st
 import matplotlib.patches as mpatches
 from mpl_toolkits.basemap import Basemap
 
-#	Algorithm:
-#	1. reading a log file into a data frame from a copy of
-#		http://www.almhuette-raith.at/apache-log/access.log
-#	2. converting date strings to DateTime type
-#	3. dividing requests depending on if they have 
-#		good bot name in agent field (doesn't definitely mean
-#		it's a good bot) or not
-#	4. check the list of good bots depending on if
-#		the request is made from an IP hosted by a trusted host or not
-#	5. filter the traffic which is not created by good bots
-#		depending on the following rules:
-#			- the general amount of requests (ignoring requests made
-#				by a page to get its sources)
-#			- time deltas between moving to another page
-#			- percentage of not-success responses
-#			- the volume of traffic coming from an unexpected location
-
 # TODO
-# Manage single requests
 # Remove double IPs if header changes
-# to black:
-# 51.15.109.127
 
 MAX_ERR = 5 # maximum amount of requests per session with a non-success response
 MAX_REQUESTS = 10 # maximum amount of requests per session with success response
 MIN_DELTA = 3.0 # minimum average time spent on each page
 SESSION_LENGTH = 1800 # length of a session in seconds
 MAX_SAME_ORIGIN = 3 # maximum of IPs of the same subnet
+SHORT_STAY_RATIO = 0.5 # maximum ratio if short stays on pages
+SHORT_STAY = 1 # short stay on pages in seconds
+MAX_SHORT_SESSIONS = 3.0 # maximum amout of short sessions
+SHORT_SESSION = 1.0
+
+SERVER_NAME = 'almhuette-raith.at'
+FILE_ERR = 'favicon.ico'
 
 DATE_FORMAT = '%d/%b/%Y:%H:%M:%S %z'
 
@@ -192,9 +179,10 @@ def filter_by_host(good_bots):
 			bad_bots.loc[bad_bots.ip == row['ip'], 'explain'] = 'HOST_NOT_MATCH'
 	return [good_bots, bad_bots]
 
-# Function used to divide time deltas into sessions
-def divide_in_sessions(freq):
-	return 
+	
+def averageLen(lst):
+	lengths = [len(lst[i + 1]) for i in range(len(lst) - 1)]
+	return 0 if len(lengths) == 0 else (float(sum(lengths)) / len(lengths))
 
 # Evaluate IP reputation depending on the frequency of requests,
 # time spent on each page, amount of error responses,
@@ -210,13 +198,30 @@ def analyze_sessions(sessions, ip, status, details):
 		handler = ipinfo.getHandler(access_token)
 		details = handler.getDetails(ip)
 		if details.timezone.find('Europe') == -1: return 'ADMIN_BAD_ORIGIN'
+	average = averageLen(sessions)
+	if average <= SHORT_SESSION and len(sessions) >= MAX_SHORT_SESSIONS:
+		return 'SHORT_SESSIONS'
 	for session in sessions:
 		if status == '200':
 			if len(session) > MAX_REQUESTS: return 'MAX_REQUESTS'
 		else:
 			if len(session) > MAX_ERR: return 'MAX_ERR'
-		if st.mean(session) < MIN_DELTA: return 'MIN_DELTA'
+		newlist = [gap for gap in session if gap <= SHORT_STAY]
+		if len(session) != 0 and len(newlist) / len(session) > SHORT_STAY_RATIO:
+			return 'MIN_DELTA'
 	return 'OK'
+	
+# Function used to divide time deltas into sessions
+def split_to_sessions(freqs):
+	all_sessions = list()
+	session = list()
+	for freq in freqs:
+		if freq >= SESSION_LENGTH:
+			all_sessions.append(session)
+			session = list()
+		session.append(freq)
+	all_sessions.append(session)
+	return all_sessions
 
 # Function used to filter traffic by the frequency of requests
 def filter_by_frequency(not_good_bots):
@@ -229,19 +234,15 @@ def filter_by_frequency(not_good_bots):
 		gr_by_status = group.groupby('status')
 		for status, inner_group in gr_by_status:
 			details = (inner_group[~inner_group['referer'].str
-						.contains('almhuette-raith.at')])
-			details = (details[~details['destination'].str
-						.contains('favicon.ico')])
+									.contains(SERVER_NAME)])
+			details = (details[~details['destination'].str.contains(FILE_ERR)])
 			freq = list()
 			prev_time = 0
 			for i, row in details.iterrows():
 				if prev_time != 0:
 					freq.append(int((row['date'] - prev_time).total_seconds()))
 				prev_time = row['date']
-			freq_in_sessions = [
-				list(y) for x, y in itertools.groupby(freq,
-				lambda z: z >= SESSION_LENGTH) if not x
-				]
+			freq_in_sessions = split_to_sessions(freq)
 			res = analyze_sessions(freq_in_sessions, ip, status, details)
 			if res != 'OK':
 				to_append = not_good_bots[not_good_bots['ip'] == ip]
@@ -318,4 +319,4 @@ if __name__ == '__main__':
 	humans = humans.groupby(['ip'])
 
 	output_to_file(data, bad_bots, good_bots, humans)
-	build_map(bad_bots, good_bots, humans)
+	# build_map(bad_bots, good_bots, humans)
