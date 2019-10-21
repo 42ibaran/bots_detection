@@ -1,7 +1,7 @@
 # Bot detection script
 
 ## About
-This program is created to analyze apache web-server log and detect bot traffic in it. All data is divided into 3 groups: humans, good bots and bad bots. After execution of the program file result.txt is created. After creating an output file with a list of IP addresses, all IPs are located and a map is built to visualize the obtained data.
+This program is created to analyze apache web-server log and detect bot traffic in it. All data is divided into 3 groups: humans, good bots and bad bots. After execution of the program the result.txt file is created. After creating the output file with a list of IP addresses, all IPs are located and a map is built to visualize the obtained data.
 
 ## Setup
 from the directory run:
