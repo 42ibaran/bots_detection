@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/22 15:15:06 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/22 15:48:00 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -287,13 +287,17 @@ def output_to_file(data, bad_bots, good_bots, humans, locations):
 	f.write("Total amount of IPs analyzed: " + str(len(data)) + "\n\n")
 	f.write("IPs trafic of which is considered as bad-bots-like:\n")
 	for ip, group in bad_bots:
-		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + "    " + str(group['explain'].iloc[0]) + '\n')
+		f.write(ip.ljust(20)
+				+ locations[locations['ip'] == ip].iloc[0]['country']
+				+ "    " + str(group['explain'].iloc[0]) + '\n')
 	f.write("\nIPs trafic of which is considered as good-bots-like:\n")
 	for ip, group in good_bots:
-		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
+		f.write(ip.ljust(20)
+				+ locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
 	f.write("\nIPs trafic of which is considered as human-like:\n")
 	for ip, group in humans:
-		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
+		f.write(ip.ljust(20)
+				+ locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
 	f.close()
 
 if __name__ == '__main__':
