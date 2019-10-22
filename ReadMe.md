@@ -18,7 +18,7 @@ This file contains the last 10000 lines from the original access.log file that c
 ```
 wget http://www.almhuette-raith.at/apache-log/access.log
 ```
-To save last lines into short.log file run:
+To save last lines into short.log file, run:
 ```
 tail -n <number> access.log > short.log
 ```
