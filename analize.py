@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/22 13:56:39 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/22 15:15:06 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -73,7 +73,7 @@ data_form = pd.DataFrame(columns=[
 # Getting the information from a .log file and putting it
 # into a list of dictionaries which will be later converted
 # into a pandas data frame
-def log_reader(filename, mode):
+def log_reader(filename):
 	print("Reading source file")
 	with open(filename) as f:
 		log = f.read()
@@ -85,7 +85,8 @@ def log_reader(filename, mode):
 
 # Locating IP addresses
 def fill_location_data(grouped, color):
-	data = pd.DataFrame(columns=['latitude', 'longitude', 'size', 'color'])
+	data = pd.DataFrame(columns=['ip', 'latitude', 'longitude',
+								'country', 'size', 'color'])
 	not_located = list()
 	access_token = 'd172b1fedf7feb' # token used to get access to ipinfo tool
 	handler = ipinfo.getHandler(access_token)
@@ -98,8 +99,10 @@ def fill_location_data(grouped, color):
 		location = details.loc.split(',')
 		if location[0] or location[1]:
 			data = data.append(pd.DataFrame({
+				'ip': ip,
 				'latitude': [float(location[0])],
 				'longitude': [float(location[1])],
+				'country': details.country,
 				'size': group.shape[0],
 				'color': color
 				}), ignore_index=True)
@@ -107,21 +110,35 @@ def fill_location_data(grouped, color):
 			not_located.append(ip)
 	return [data, not_located]
 
-# Function used to locate the IP of requests and build the map
-def build_map(bad_bots, good_bots, human_req):
-	print("Building a map of IP groups")
-	data = pd.DataFrame(columns=['latitude', 'longitude', 'size', 'color'])
+# Locating all IPs
+def locate_all_ips(bad_bots, good_bots, humans):
+	print("Locating all IPs")
+	bad_loc = fill_location_data(bad_bots, 'red')
+	good_loc = fill_location_data(good_bots, 'orange')
+	humans_loc = fill_location_data(humans, 'green')
 
-	bad = fill_location_data(bad_bots, 'red')
-	good = fill_location_data(good_bots, 'orange')
-	humans = fill_location_data(human_req, 'green')
+	if len(bad_loc[1] + good_loc[1] + humans_loc[1]) != 0:
+		print("Couldn't locate", len(bad_loc[1] + bad_loc[1] + bad_loc[1]), "IPs")
+
+	locations = pd.DataFrame(columns=['ip', 'latitude', 'longitude',
+								'country', 'size', 'color'])
+	locations = locations.append(bad_loc[0], ignore_index=True)
+	locations = locations.append(good_loc[0], ignore_index=True)
+	locations = locations.append(humans_loc[0], ignore_index=True)
+	return locations
+
+# Function used to locate the IP of requests and build the map
+def build_map(bad_bots, good_bots, human_req, data):
+	print("Building a map of IP groups")
+
+	# bad = fill_location_data(bad_bots, 'red')
+	# good = fill_location_data(good_bots, 'orange')
+	# humans = fill_location_data(human_req, 'green')
 	
-	data = data.append(bad[0], ignore_index=True)
-	data = data.append(good[0], ignore_index=True)
-	data = data.append(humans[0], ignore_index=True)
+	# data = data.append(bad[0], ignore_index=True)
+	# data = data.append(good[0], ignore_index=True)
+	# data = data.append(humans[0], ignore_index=True)
 	
-	if len(bad[1] + good[1] + humans[1]) != 0:
-		print("Couldn't locate", len(bad[1] + good[1] + humans[1]), "IPs")
 
 	plt.subplots(figsize=(20,10))
 	m = Basemap(llcrnrlon=-160, llcrnrlat=-75, urcrnrlon=160,
@@ -132,7 +149,7 @@ def build_map(bad_bots, good_bots, human_req):
 
 	for i, row in data.iterrows():
 		plt.scatter(row.longitude, row.latitude, c=row.color,
-				s=row['size'] * 2, alpha=0.8)
+				s=row['size'], alpha=0.8)
 					
 	green_patch = mpatches.Patch(color='green', label='Humans')
 	orange_patch = mpatches.Patch(color='orange', label='Good bots')
@@ -263,20 +280,20 @@ def filter_by_origin(not_good_bots, bad_bots):
 	return [not_good_bots, new_bad_bots]
 
 # Function used to output the result to a file
-def output_to_file(data, bad_bots, good_bots, humans):
+def output_to_file(data, bad_bots, good_bots, humans, locations):
 	print("Writing data to file 'result.txt'")
 	data = data.groupby(['ip'])
 	f = open("result.txt", "w+")
 	f.write("Total amount of IPs analyzed: " + str(len(data)) + "\n\n")
-	f.write("IPs trafic of which is concidered as human-like:\n")
-	for ip, group in humans:
-		f.write(ip + "\n")
-	f.write("\nIPs trafic of which is concidered as bad-bots-like:\n")
+	f.write("IPs trafic of which is considered as bad-bots-like:\n")
 	for ip, group in bad_bots:
-		f.write(ip.ljust(20) + str(group['explain'].iloc[0]) + "\n")
-	f.write("\nIPs trafic of which is concidered as good-bots-like:\n")
+		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + "    " + str(group['explain'].iloc[0]) + '\n')
+	f.write("\nIPs trafic of which is considered as good-bots-like:\n")
 	for ip, group in good_bots:
-		f.write(ip + "\n")
+		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
+	f.write("\nIPs trafic of which is considered as human-like:\n")
+	for ip, group in humans:
+		f.write(ip.ljust(20) + locations[locations['ip'] == ip].iloc[0]['country'] + '\n')
 	f.close()
 
 if __name__ == '__main__':
@@ -287,8 +304,7 @@ if __name__ == '__main__':
 	else:
 		filename = LOG_FILENAME
 
-	data = data.append(pd.DataFrame(log_reader(filename, "access")),
-						sort=False)
+	data = data.append(pd.DataFrame(log_reader(filename)), sort=False)
 	data['date'] = pd.to_datetime(data['date'], format=DATE_FORMAT)
 
 	filtered = filter_by_header(data)
@@ -311,5 +327,7 @@ if __name__ == '__main__':
 	good_bots = good_bots.groupby(['ip'])
 	humans = humans.groupby(['ip'])
 
-	output_to_file(data, bad_bots, good_bots, humans)
-	build_map(bad_bots, good_bots, humans)
+	locations = locate_all_ips(bad_bots, good_bots, humans)
+
+	output_to_file(data, bad_bots, good_bots, humans, locations)
+	build_map(bad_bots, good_bots, humans, locations)
