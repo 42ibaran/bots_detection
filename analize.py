@@ -6,7 +6,7 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/22 12:41:45 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/22 13:56:39 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -57,7 +57,7 @@ good_host_names = [
 	"sosospider", "exabot"
 	]
 
-# add bad referrers addresses to add them to bad bots list 
+# add bad referers addresses to add them to bad bots list 
 bad_referers = [
 	'site.ru'
 	]
@@ -186,7 +186,7 @@ def averageLen(lst):
 
 # Evaluate IP reputation depending on the frequency of requests,
 # time spent on each page, amount of error responses,
-# referrer, visited files, and the location if
+# referer, visited files, and the location if
 # the administrator page is a destination
 def analyze_sessions(sessions, ip, status, details):
 	access_token = 'd172b1fedf7feb'

@@ -30,7 +30,7 @@ This file contains a list of analyzed IP addresses grouped by the origin of the 
 
 2. ROBOT_TXT: the user requested to get the file robots.txt but the http-header either doesn't mention that the request is made by a bot or the bot name is not trusted
 
-3. BAD_REFERER: referrer of the request is in the black-list
+3. BAD_REFERER: referer of the request is in the black-list
 
 4. MIN_DELTA: an average gap between the user's request is too short
 
@@ -51,7 +51,7 @@ This file contains a list of analyzed IP addresses grouped by the origin of the 
 4. Filter the traffic which is not created by good bots depending on the following rules:
 
 	- length and frequency of sessions
-	- web referrer
+	- web referer
 	- time deltas between moving another pages
 	- the volume of traffic coming from an untrusted origin
 	- relations between visited pages and origin of requests
