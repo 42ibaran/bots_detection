@@ -6,27 +6,23 @@
 #    By: ibaran <ibaran@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/16 15:17:59 by ibaran            #+#    #+#              #
-#    Updated: 2019/10/22 00:38:23 by ibaran           ###   ########.fr        #
+#    Updated: 2019/10/22 12:41:45 by ibaran           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 import re
-import pandas as pd
+import os
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import operator
+import pandas as pd
 import ipinfo
 import socket
-import itertools
-import statistics as st
+import matplotlib
+import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import os
 from mpl_toolkits.basemap import Basemap
 
 MIN_DELTA = 3.0 # minimum average time spent on each page
 SESSION_LENGTH = 1800 # length of a session in seconds
-MAX_SAME_ORIGIN = 3 # maximum of IPs of the same subnet
 SHORT_STAY_RATIO = 0.5 # maximum ratio if short stays on pages
 SHORT_STAY = 1 # short stay on pages in seconds
 MAX_SHORT_SESSIONS = 3.0 # maximum amout of short sessions
@@ -47,7 +43,8 @@ good_bots_names = ["googlebot", "askjeeves", "digger", "lycos",
 	"metauri", "feedfetcher-google", "paperlibot", "tweetmemebot",
 	"sogou web spider", "googleproducer", "rockmeltembedder",
 	"sharethisfetcher", "yandexbot", "rogerbot-crawler", "showyoubot",
-	"baiduspider", "sosospider", "exabot"]
+	"baiduspider", "sosospider", "exabot"
+	]
 
 good_host_names = [
 	"google", "askjeeves", "digger", "lycos",
@@ -251,28 +248,19 @@ def filter_by_frequency(not_good_bots):
 	return [not_good_bots, bad_bots]
 
 # Function used to filter traffic depending on
-# if it comes from a similar and unexpected origin
-def filter_by_origin(not_good_bots):
+# if it comes from a similar origin as any bad bot
+def filter_by_origin(not_good_bots, bad_bots):
 	print("Filtering data by origin")
-	bad_bots = data_form
-	same_origins = data_form
-	for i, row in not_good_bots.iterrows():
-		splt = row['ip'].split('.')[0:3]
+	grouped = bad_bots.groupby('ip')
+	new_bad_bots = data_form
+	for ip, group in grouped:
+		splt = ip.split('.')[0:3]
 		origin = '.'.join(splt)
-		to_find_in = not_good_bots[not_good_bots.ip != row['ip']]
-		if to_find_in['ip'].str.contains(origin).any():
-			same_origins = same_origins.append(row)
-	for i, same_origin in same_origins.iterrows():
-		splt = same_origin['ip'].split('.')[0:3]
-		origin = '.'.join(splt)
-		origins = same_origins[same_origins['ip'].str.contains(origin)]
-		if origins['ip'].count() > MAX_SAME_ORIGIN \
-		and not bad_bots['ip'].str.contains(origin).any():
-			origins = origins.assign(explain = 'UNTRUSTED_ORIGIN')
-			bad_bots = bad_bots.append(origins)
-			not_good_bots = not_good_bots[~not_good_bots['ip']
-											.str.contains(origin)]
-	return [not_good_bots, bad_bots]
+		new_bad_bots = new_bad_bots.append(
+					not_good_bots[not_good_bots['ip'].str.startswith(origin)])
+		not_good_bots = not_good_bots[~not_good_bots['ip'].str.startswith(origin)]
+	new_bad_bots = new_bad_bots.assign(explain='UNTRUSTED_ORIGIN')
+	return [not_good_bots, new_bad_bots]
 
 # Function used to output the result to a file
 def output_to_file(data, bad_bots, good_bots, humans):
@@ -315,7 +303,7 @@ if __name__ == '__main__':
 	not_good_bots = filtered[0]
 	bad_bots = bad_bots.append(filtered[1])
 
-	filtered = filter_by_origin(not_good_bots)
+	filtered = filter_by_origin(not_good_bots, bad_bots)
 	humans = filtered[0]						# FILNAL HUMAN TRAFIC
 	bad_bots = bad_bots.append(filtered[1])		# FILNAL BAD BOTS TRAFIC
 
