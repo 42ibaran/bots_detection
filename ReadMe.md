@@ -31,7 +31,7 @@ $ tail -n <number> access.log > short.log
 ```
 
 ## result.txt
-This file contains a list of analyzed IP addresses grouped by users types. For the group of bad bots the reason of the decision is mentioned:
+This file contains a list of analyzed IP addresses grouped by users types. For the group of bad bots the reason for the decision is mentioned:
 
 1. ADMIN_BAD_ORIGIN: the user tried to connect to the administrator page from an IP that is not located in Europe (as the website is located in Austria)
 
