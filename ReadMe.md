@@ -4,27 +4,34 @@
 This program is created to analyze apache web-server log and detect bot traffic in it. All data is divided into 3 groups: humans, good bots and bad bots. After the execution of the program, the result.txt file is created, all IPs are located and a map is built to visualize the obtained data.
 
 ## Setup
-From the directory run:
+Notice, that you need to have a docker machine running and the docker environment set. To do so run the following:
 ```
-docker image build -t bot_detection:1.0 . && docker run -it --mount type=bind,source="$(pwd)",target=/usr/src/app bot_detection:1.0
+$ docker-machine create machinename
+$ eval $(docker-machine env machinename)
+```
+
+After that, from the working directory run the following:
+```
+$ docker image build -t bot_detection:1.0 . 
+$ docker run -it --mount type=bind,source="$(pwd)",target=/usr/src/app bot_detection:1.0
 ```
 If you want to specify the filename that has to be analyzed, set the environment variable:
 ```
-docker run -it --mount type=bind,source="$(pwd)",target=/usr/src/app -e LOG_FILENAME='filename' bot_detection:1.0
+$ docker run -it --mount type=bind,source="$(pwd)",target=/usr/src/app -e LOG_FILENAME='filename' bot_detection:1.0
 ```
 
 ## short.log
 This file contains the last 10000 lines from the original access.log file that can be reached at http://www.almhuette-raith.at/apache-log/access.log. To get the original file run the following command:
 ```
-wget http://www.almhuette-raith.at/apache-log/access.log
+$ wget http://www.almhuette-raith.at/apache-log/access.log
 ```
-To save last lines into short.log file, run:
+To save last \<number\> lines of the access.log file into short.log file, run:
 ```
-tail -n <number> access.log > short.log
+$ tail -n <number> access.log > short.log
 ```
 
 ## result.txt
-This file contains a list of analyzed IP addresses grouped by users types. For the group of bad bots the reason of the decision is mentioned:
+This file contains a list of analyzed IP addresses grouped by user types. Each IP address if followed by a country code. For the group of bad bots the reason for the decision is mentioned:
 
 1. ADMIN_BAD_ORIGIN: the user tried to connect to the administrator page from an IP that is not located in Europe (as the website is located in Austria)
 
