@@ -4,7 +4,13 @@
 This program is created to analyze apache web-server log and detect bot traffic in it. All data is divided into 3 groups: humans, good bots and bad bots. After the execution of the program, the result.txt file is created, all IPs are located and a map is built to visualize the obtained data.
 
 ## Setup
-From the directory run:
+Notice, that you need to have a docker machine running and the docker environment set. To do so run the following:
+```
+docker-machine create machine_name
+eval $(docker-machine env machine_name)
+```
+
+After that, from the working directory run:
 ```
 docker image build -t bot_detection:1.0 . && docker run -it --mount type=bind,source="$(pwd)",target=/usr/src/app bot_detection:1.0
 ```
