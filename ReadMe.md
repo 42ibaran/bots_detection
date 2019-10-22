@@ -6,8 +6,8 @@ This program is created to analyze apache web-server log and detect bot traffic 
 ## Setup
 Notice, that you need to have a docker machine running and the docker environment set. To do so run the following:
 ```
-$ docker-machine create machine_name
-$ eval $(docker-machine env machine_name)
+$ docker-machine create machinename
+$ eval $(docker-machine env machinename)
 ```
 
 After that, from the working directory run the following:
